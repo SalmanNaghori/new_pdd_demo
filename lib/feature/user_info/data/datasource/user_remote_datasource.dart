@@ -1,18 +1,24 @@
-import 'package:dio/dio.dart';
+import 'package:new_pdd_demo/core/network/client/dio_client.dart';
+import 'package:new_pdd_demo/core/network/error/api_exception.dart';
+import 'package:new_pdd_demo/core/network/models/request_model.dart';
 import 'package:new_pdd_demo/feature/user_info/data/model/user_model.dart';
 
 class UserRemoteDataSource {
-  final Dio dio;
+  final ApiClient apiClient;
 
-  UserRemoteDataSource(this.dio);
+  UserRemoteDataSource(this.apiClient);
 
   Future<List<UserModel>> getUsers() async {
-    final response = await dio.get('https://jsonplaceholder.typicode.com/users', options: Options(validateStatus: (status) => true));
+    final response = await apiClient.request(
+      request: RequestModel(
+        method: HTTPMethod.get,
+        endpoint: '/users',
+        baseUrlOverride: 'https://jsonplaceholder.typicode.com',
+        isPrivate: true, // Example showing private call if needed
+      ),
+    );
 
-    if (response.statusCode == 200) {
-      return (response.data as List).map((json) => UserModel.fromJson(json)).toList();
-    } else {
-      throw Exception("Server error: ${response.statusCode}");
-    }
+    return (response.data as List).map((json) => UserModel.fromJson(json)).toList();
   }
 }
+

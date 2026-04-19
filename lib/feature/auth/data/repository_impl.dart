@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
+import 'package:new_pdd_demo/core/network/error/api_exception.dart';
 import 'package:new_pdd_demo/core/error/failure.dart';
-import 'package:new_pdd_demo/core/network/network_info.dart';
+import 'package:new_pdd_demo/core/network/monitor/network_info.dart';
 import 'package:new_pdd_demo/feature/auth/data/datasource/auth_remote_datasource.dart';
 import 'package:new_pdd_demo/feature/auth/domain/entities/user.dart';
 import 'package:new_pdd_demo/feature/auth/domain/repositories/auth_repository.dart';
@@ -21,18 +21,18 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await remoteDataSource.login(email: email, password: password);
       return Right(user);
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-
-      if (statusCode == 400) {
-        return Left(AuthFailure(e.response?.data["error"] ?? "Invalid data"));
+    } on ApiException catch (e) {
+      if (e.statusCode == 400 || e.statusCode == 401) {
+        return Left(AuthFailure(e.message)); // Uses our global parsing
       }
 
-      if (statusCode == 503) {
+      if (e.statusCode == 503) {
         return Left(MaintenanceFailure("Server under maintenance"));
       }
 
-      return Left(ServerFailure("Something went wrong"));
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure("Unexpected error occurred"));
     }
   }
 
@@ -45,18 +45,18 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await remoteDataSource.signup(email: email, password: password, name: name);
       return Right(user);
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-
-      if (statusCode == 400) {
-        return Left(AuthFailure(e.response?.data["error"] ?? "Invalid data"));
+    } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        return Left(AuthFailure(e.message));
       }
 
-      if (statusCode == 503) {
+      if (e.statusCode == 503) {
         return Left(MaintenanceFailure("Server under maintenance"));
       }
 
-      return Left(ServerFailure("Something went wrong"));
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure("Unexpected error occurred"));
     }
   }
 }

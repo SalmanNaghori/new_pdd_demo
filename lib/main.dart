@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:new_pdd_demo/core/di/auth_binding.dart';
-import 'package:new_pdd_demo/core/di/core_binding.dart';
-import 'package:new_pdd_demo/feature/auth/presentation/pages/login_screen.dart';
-import 'package:new_pdd_demo/feature/auth/presentation/pages/signup_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:new_pdd_demo/core/di/injection.dart';
+import 'package:new_pdd_demo/core/routes/app_router.dart';
+import 'package:new_pdd_demo/core/presentation/app_orchestrator.dart';
+import 'package:new_pdd_demo/core/theme/app_theme.dart';
+import 'package:new_pdd_demo/core/theme/bloc/theme_bloc.dart';
+import 'package:new_pdd_demo/core/constant/app_strings.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initInjector();
   runApp(const MyApp());
 }
 
@@ -14,13 +18,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      initialBinding: CoreBinding(),
-      initialRoute: '/login',
-      getPages: [
-        GetPage(name: '/login', page: () => LoginScreen(), binding: AuthBinding()),
-        GetPage(name: '/signup', page: () => SignupScreen(), binding: AuthBinding()),
-      ],
+    return BlocProvider(
+      create: (context) => sl<ThemeBloc>()..add(LoadThemeEvent()),
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp.router(
+            title: AppStrings.appName,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: state.themeMode,
+            builder: (context, child) => AppOrchestrator(child: child!),
+            routerConfig: AppRouter.router,
+          );
+        },
+      ),
     );
   }
 }
